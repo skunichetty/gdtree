@@ -1,4 +1,4 @@
-from app import start
+from pytree.app import start
 
 if __name__ == "__main__":
     # Delegate execution to app module
