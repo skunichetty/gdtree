@@ -4,13 +4,17 @@ A set of constant variables and objects utilized by pytree
 from pytree.entry_type import EntryType
 from colorama import Fore
 
+# The default color to be printed
+DEFAULT_COLOR = Fore.WHITE
+
 # Mapping directory entry types to colors in terminal
 COLORMAP = {
     EntryType.EXECUTABLE: Fore.RED,
-    EntryType.FILE: Fore.WHITE,
+    EntryType.FILE: DEFAULT_COLOR,
     EntryType.SYMLINK: Fore.GREEN,
     EntryType.DIRECTORY: Fore.BLUE,
 }
+
 
 # The prefix that prepends directory entries in the final view
 BRANCH_PREFIX = "\u251C\u2500\u2500 "
