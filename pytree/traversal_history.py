@@ -2,16 +2,6 @@ from typing import Tuple
 import pytree.constants as constants
 
 
-class DepthError(Exception):
-    """
-    An error called when a DirectoryTreeEntry or traversal function attempts
-    to exceed the maximum program depth
-    """
-
-    def __init__(self, message: str):
-        self.message = message
-
-
 class TraversalHistory:
     """
     A class that holds the traversal history.
@@ -26,20 +16,20 @@ class TraversalHistory:
         Updates the history entry at the given depth
 
         Args:
-            depth (int): The depth at which to update history
+            depth (int): The (zero-indexed) depth at which to update history.
             value (bool): The new value to change it to
 
         Raises:
             DepthError: Depth is negative or exceeds current depth
         """
-        if depth <= 0 or depth > self.depth:
+        if depth < 0 or depth >= self.depth:
             raise DepthError(
                 "Depth of %d exceeds current history depth" % depth
             )
         # KEY - the newest state resides at the MSB (bit at index $depth-1$)
         # This makes it easier to read the history values back (have to start from
         # LSB and move forward)
-        mask = 1 << (depth - 1)
+        mask = 1 << (depth)
         if value:
             self.history |= mask
         else:
@@ -56,7 +46,7 @@ class TraversalHistory:
             DepthError: Attempted to update history beyond max possible depth
 
         Returns:
-            Tuple[int, int]: [description]
+            Tuple[int, int]: A tuple containing the new history and the new depth of this traversal
         """
         if self.depth == constants.MAX_DEPTH:
             raise DepthError(
@@ -70,3 +60,13 @@ class TraversalHistory:
             self.history |= mask
         self.depth += 1
         return self.history, self.depth
+
+
+class DepthError(Exception):
+    """
+    An error called when a DirectoryTreeEntry or traversal function attempts
+    to exceed the maximum program depth
+    """
+
+    def __init__(self, message: str):
+        self.message = message

@@ -61,7 +61,7 @@ class TestTraversalHistory(TestCase):
         entry = TraversalHistory(0b100101, 6)
         entry.update_history(4, True)
         self.assertEqual(entry.depth, 6)
-        self.assertEqual(entry.history, 0b101101)
+        self.assertEqual(entry.history, 0b110101)
         entry.update_history(4, False)
         self.assertEqual(entry.depth, 6)
         self.assertEqual(entry.history, 0b100101)
@@ -71,9 +71,9 @@ class TestTraversalHistory(TestCase):
         Tests that history is updated at exactly the overall depth
         """
         entry = TraversalHistory(0b100101, 6)
-        entry.update_history(6, False)
+        entry.update_history(5, False)
         self.assertEqual(entry.history, 0b000101)
-        entry.update_history(6, True)
+        entry.update_history(5, True)
         self.assertEqual(entry.depth, 6)
         self.assertEqual(entry.history, 0b100101)
 
@@ -83,9 +83,9 @@ class TestTraversalHistory(TestCase):
         """
         entry = TraversalHistory(0b100101, 6)
         with self.assertRaises(DepthError):
-            entry.update_history(7, True)
+            entry.update_history(6, True)
         with self.assertRaises(DepthError):
-            entry.update_history(0, True)
+            entry.update_history(-1, True)
 
 
 if __name__ == "__main__":

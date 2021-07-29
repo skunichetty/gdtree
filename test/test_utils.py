@@ -81,6 +81,24 @@ class TestTypeExtraction(TestCase):
             assert get_type(entry) == expected_value
 
     @patch("pytree.utils.os")
+    def test_type_extraction_is_symlink_to_dir(self, mocked_os):
+        """
+        Tests that entry type is symbolic link even if to dir. Python is_dir() will return true if it is
+        a symlink that points to a directory, so we want to read if its a symlink before read if its
+        a directory
+
+        Note: This test is invalidated with new changes in implementation,
+        but is left in as a reminder of this potential bug
+        """
+        mock = Mock(spec=DirEntry)
+        mock.is_dir.return_value = False
+        mock.is_symlink.return_value = True
+        mocked_os.access.return_value = False
+
+        type = get_type(mock)
+        assert type == EntryType.SYMLINK
+
+    @patch("pytree.utils.os")
     def test_type_extraction_is_symlink_error(self, mocked_os):
         """
         Tests that testing for directory has errors handled to
