@@ -1,5 +1,5 @@
 from typing import List
-import pytree.constants as constants
+from pytree.utils import MAX_DEPTH
 
 
 class EndStateHistory:
@@ -24,7 +24,7 @@ class EndStateHistory:
         self.history = 0
         self.depth = 0
         if input_history is not None and len(input_history) > 0:
-            if len(input_history) > constants.MAX_DEPTH:
+            if len(input_history) > MAX_DEPTH:
                 raise ValueError(
                     "Input list has too many values (greater than maximum allowed depth)"
                 )
@@ -88,7 +88,7 @@ class EndStateHistory:
         Raises:
             DepthError: Raises if attempt is made to extend end state beyond maximum depth
         """
-        if self.depth == constants.MAX_DEPTH:
+        if self.depth == MAX_DEPTH:
             raise DepthError(
                 "Attempted to extend state history beyond maximum allowed traversal depth"
             )
@@ -117,7 +117,7 @@ class EndStateHistory:
         Raises:
             DepthError: Raises if extension by other history will exceed maximum allowed traversal depth
         """
-        if (self.depth + other.depth) > constants.MAX_DEPTH:
+        if (self.depth + other.depth) > MAX_DEPTH:
             raise DepthError(
                 "Attempted to extend state history beyond maximum allowed traversal depth"
             )

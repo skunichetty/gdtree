@@ -1,212 +1,244 @@
 from unittest import TestCase, main
-
-import colorama
-
 from pytree.filestring import (
-    generate_filestring,
+    create_filestring_builder,
     get_filestring_color,
-    generate_prefix,
+    type_colorize,
     _get_prefix,
-    _get_prefix_file,
-    get_name,
-    colorize,
+    build_prefix,
+    build_fancy_prefix,
 )
-from pytree.entry_type import EntryType
-from unittest.mock import Mock
+from pytree.utils import EntryType, Settings
 from colorama import Fore
-import pytree.constants as constants
+from pytree.end_state_history import EndStateHistory
 
 
-class TestStringGeneration(TestCase):
-    def test_string_generation_get_colors(self):
+class TestFilestring(TestCase):
+    def test_get_color_directory(self):
         """
-        Tests that colors of the output generation string are properly generated
+        Tests that colors corresponding to a directory are properly generated
         """
-        mock_values = (
-            (
-                "__pycache__",
-                EntryType.DIRECTORY,
-                2,
-            ),
-            ("pytree", EntryType.DIRECTORY, 0),
-            ("python3.8", EntryType.SYMLINK, 3),
-            ("requirements.txt", EntryType.FILE, 8),
-            ("activate", EntryType.EXECUTABLE, 3),
-        )
-        mocked_entries = []
-        for name, type, depth in mock_values:
-            mock = Mock()
-            mock.name = name
-            mock.type = type
-            mock.depth = depth
-            mocked_entries.append(mock)
-        output_colors = (Fore.BLUE, Fore.BLUE, Fore.GREEN, Fore.WHITE, Fore.RED)
-        for index, entry in enumerate(mocked_entries):
-            self.assertEqual(output_colors[index], get_filestring_color(entry))
+        self.assertEqual(Fore.BLUE, get_filestring_color(EntryType.DIRECTORY))
 
-    def test_string_generation_get_colors_error(self):
+    def test_get_color_symlink(self):
         """
-        Tests that passing an entry with an invalid type raises a value error
+        Tests that colors corresponding to a symbolic link are properly generated
         """
-        mock = Mock()
-        mock.name = "a_file"
-        mock.type = "invalid_type"
-        mock.depth = 3
+        self.assertEqual(Fore.GREEN, get_filestring_color(EntryType.SYMLINK))
+
+    def test_get_color_executable(self):
+        """
+        Tests that colors corresponding to an executable are properly generated
+        """
+        self.assertEqual(Fore.RED, get_filestring_color(EntryType.EXECUTABLE))
+
+    def test_get_color_file(self):
+        """
+        Tests that colors corresponding to a file are properly generated
+        """
+        self.assertEqual(Fore.WHITE, get_filestring_color(EntryType.FILE))
+
+    def test_get_colors_error(self):
+        """
+        Tests that passing an invalid type raises a value error
+        """
         with self.assertRaises(ValueError):
-            color = get_filestring_color(mock)
+            color = get_filestring_color("an invalid type")
 
-    def test_string_generation_prefix(self):
+    def test_colorize(self):
         """
-        Tests the correct prefix is returned based on the correct end state
+        Tests that text is colorized properly given type
         """
-        input_values = (True, False)
-        output_values = (constants.SPACER, constants.SPACER_WITH_LIMB)
-        for input_value, output_value in zip(input_values, output_values):
-            self.assertEqual(output_value, _get_prefix(input_value))
+        input_text = "__pycache__"
+        input_type = EntryType.DIRECTORY
+        output_text = type_colorize(input_text, input_type)
+        expected_output = Fore.BLUE + "__pycache__" + Fore.WHITE
+        self.assertEqual(output_text, expected_output)
 
-    def test_string_generation_prefix_file(self):
+    def test_colorize_file(self):
         """
-        Tests the correct file prefix (prefix string just before the filename in the
-        printed directory tree) is returned based on the correct end state
+        Tests that text is colorized properly given file type, in which case
+        no colorization should occur (to save on processing)
         """
-        input_values = (True, False)
-        output_values = (constants.BRANCH_END_PREFIX, constants.BRANCH_PREFIX)
-        for input_value, output_value in zip(input_values, output_values):
-            self.assertEqual(output_value, _get_prefix_file(input_value))
+        input_text = "__pycache__"
+        input_type = EntryType.FILE
+        output_text = type_colorize(input_text, input_type)
+        expected_output = "__pycache__"
+        self.assertEqual(output_text, expected_output)
 
-    def test_string_generation_integer(self):
+    def test_colorize_error(self):
         """
-        Tests the correct prefix is returned when using numeric equivalents of booleans
+        Tests that a ValueError is raised when given an invalid type
         """
-        input_values = (1, 0)
-        output_values = (constants.SPACER, constants.SPACER_WITH_LIMB)
-        for input_value, output_value in zip(input_values, output_values):
-            self.assertEqual(output_value, _get_prefix(input_value))
+        input_text = "__pycache__"
+        input_type = 0
+        with self.assertRaises(ValueError):
+            output_text = type_colorize(input_text, input_type)
 
-    def test_string_generation_prefixes(self):
-        """ """
-        mock_values = (
-            ("__pycache__", EntryType.DIRECTORY, 2, 0b00),
-            ("pytree", EntryType.DIRECTORY, 0, -1),
-            ("python3.8", EntryType.SYMLINK, 3, 0b100),
-            ("requirements.txt", EntryType.FILE, 8, 0b00010011),
-            ("activate", EntryType.EXECUTABLE, 3, 0b100),
-        )
-        mocked_entries = []
-        for path, type, depth, history in mock_values:
-            mocked_entry = Mock()
-            mocked_history = Mock()
-            mocked_entry.path = path
-            mocked_entry.type = type
-            mocked_history.depth = depth
-            mocked_history.history = history
-            mocked_entry.history = mocked_history
-            mocked_entries.append(mocked_entry)
-        output_strings = (
-            "│   ├── ",
-            "",
-            "│   │   └── ",
-            "        │   │       │   │   ├── ",
-            "│   │   └── ",
-        )
-        for string, entry in zip(output_strings, mocked_entries):
-            self.assertEqual(string, generate_prefix(entry))
-
-    def test_string_generation_filestring(self):
-        mock_values = (
-            ("__pycache__", EntryType.DIRECTORY, 2, 0b00),
-            ("pytree", EntryType.DIRECTORY, 0, -1),
-            ("pytree", EntryType.DIRECTORY, 0, -1),
-            ("python3.8", EntryType.SYMLINK, 3, 0b100),
-            ("requirements.txt", EntryType.FILE, 8, 0b00010011),
-            ("activate", EntryType.EXECUTABLE, 3, 0b100),
-        )
-        mocked_entries = []
-        for path, type, depth, history in mock_values:
-            mocked_entry = Mock()
-            mocked_history = Mock()
-            mocked_entry.path = path
-            mocked_entry.type = type
-            mocked_history.depth = depth
-            mocked_history.history = history
-            mocked_entry.history = mocked_history
-            mocked_entries.append(mocked_entry)
-        colorize_values = (True, True, False, True, True, True)
-        output_strings = (
-            "│   ├── " + Fore.BLUE + "__pycache__" + Fore.WHITE,
-            Fore.BLUE + "pytree" + Fore.WHITE,
-            "pytree",
-            "│   │   └── " + Fore.GREEN + "python3.8" + Fore.WHITE,
-            "        │   │       │   │   ├── requirements.txt",
-            "│   │   └── " + Fore.RED + "activate" + Fore.WHITE,
-        )
-        for output_string, entry, colorize in zip(
-            output_strings, mocked_entries, colorize_values
-        ):
-            self.assertEqual(
-                output_string, generate_filestring(entry, colorize)
-            )
-
-    def test_string_generation_colorize(self):
+    def test_get_name(self):
         """
-        Tests that text is appropriately colorized
+        Tests that the formatted name is properly gotten given input path
         """
-        input_text = (
-            "__pycache__",
-            "pytree",
-            "python3.8",
-            "requirements.txt",
-            "activate",
-        )
-        colorize_values = (
+        input_path = "a/path/to/a/file"
+        pass
+
+    def test_prefix_true(self):
+        """
+        Tests that the correct prefix is returned from a given prefix set when
+        end state is True
+        """
+        prefix_set = {True: "prefix1", False: "prefix2"}
+        output = _get_prefix(True, prefix_set)
+        self.assertEqual("prefix1", output)
+
+    def test_prefix_false(self):
+        """
+        Tests that the correct prefix is returned from a given prefix set when
+        end state is False
+        """
+        prefix_set = {True: "prefix1", False: "prefix2"}
+        output = _get_prefix(False, prefix_set)
+        self.assertEqual("prefix2", output)
+
+    def test_prefix_error(self):
+        """
+        Tests that the correct prefix is returned from a given prefix set when
+        end state is True
+        """
+        prefix_set = {True: "prefix1", False: "prefix2"}
+        with self.assertRaises(ValueError):
+            prefix = _get_prefix("an invalid state", prefix_set)
+
+    def test_prefix_generation_end_false(self):
+        """
+        Tests that the proper prefix is generated given end state history with the most recent
+        state value being False
+        """
+        history = EndStateHistory([True, False, False, True, True, False])
+        output_string = build_prefix(history)
+        expected_output = "    │   │           ├── "
+        self.assertEqual(output_string, expected_output)
+
+    def test_prefix_generation_end_true(self):
+        """
+        Tests that the proper prefix is generated given end state history with the most recent
+        state value being True
+        """
+        history = EndStateHistory([True, False, False, True, True, True])
+        output_string = build_prefix(history)
+        expected_output = "    │   │           └── "
+        self.assertEqual(output_string, expected_output)
+
+    def test_prefix_generation_one_entry(self):
+        """
+        Tests that the proper prefix is generated for a state history with only one entry
+        """
+        history = EndStateHistory([True])
+        output_string = build_prefix(history)
+        expected_output = "└── "
+        self.assertEqual(output_string, expected_output)
+
+    def test_prefix_fancy_generation_end_false(self):
+        """
+        Tests that a fancy prefix is generated given end state history with the most recent
+        state value being False
+        """
+        history = EndStateHistory([True, False, False, True, True, False])
+        output_string = build_fancy_prefix(history)
+        expected_output = "    ║   ║           ╠══ "
+        self.assertEqual(output_string, expected_output)
+
+    def test_prefix_fancy_generation_end_true(self):
+        """
+        Tests that a fancy prefix is generated given end state history with the most recent
+        state value being True
+        """
+        history = EndStateHistory([True, False, False, True, True, True])
+        output_string = build_fancy_prefix(history)
+        expected_output = "    ║   ║           ╚══ "
+        self.assertEqual(output_string, expected_output)
+
+    def test_prefix_fancy_generation_one_entry(self):
+        """
+        Tests that the proper prefix is generated for a state history with only one entry
+        """
+        history = EndStateHistory([True])
+        output_string = build_fancy_prefix(history)
+        expected_output = "╚══ "
+        self.assertEqual(output_string, expected_output)
+
+    def test_filestring_builder_basic(self):
+        """
+        Tests that the filestring builder is correctly created from default settings
+        """
+        # Item options
+        path = "a/path/to/a/new/directory"
+        type = EntryType.DIRECTORY
+        history = EndStateHistory([True, False, False, True, True, True])
+
+        settings = Settings(0)
+
+        generator = create_filestring_builder(settings)
+        output = generator(path, type, history)
+        expected_output = "    │   │           └── directory"
+        self.assertEqual(output, expected_output)
+
+    def test_filestring_builder_colorization(self):
+        """
+        Tests that the filestring builder is correctly created to colorize output string
+        """
+        # Item options
+        path = "a/path/to/a/new/directory"
+        type = EntryType.DIRECTORY
+        history = EndStateHistory([True, False, False, True, True, True])
+
+        settings = Settings(0)
+        settings |= Settings.COLORIZE
+
+        generator = create_filestring_builder(settings)
+        output = generator(path, type, history)
+        expected_output = "    │   │           └── %sdirectory%s" % (
             Fore.BLUE,
-            Fore.BLUE,
-            Fore.GREEN,
             Fore.WHITE,
-            Fore.RED,
         )
-        output_text = (
-            Fore.BLUE + "__pycache__" + Fore.WHITE,
-            Fore.BLUE + "pytree" + Fore.WHITE,
-            Fore.GREEN + "python3.8" + Fore.WHITE,
-            Fore.WHITE + "requirements.txt" + Fore.WHITE,
-            Fore.RED + "activate" + Fore.WHITE,
-        )
-        for input_name, output_name, color in zip(
-            input_text, output_text, colorize_values
-        ):
-            self.assertEqual(output_name, colorize(color, input_name))
+        self.assertEqual(output, expected_output)
 
-    def test_string_generation_name(self):
+    def test_filestring_builder_fancy(self):
         """
-        Tests that the proper filenames are produced
+        Tests that the filestring builder is correctly created to make output string fancy
         """
-        mock_values = (
-            (
-                "a/path/to/__pycache__",
-                EntryType.DIRECTORY,
-                True,
-            ),
-            ("pytree", EntryType.DIRECTORY, False),
-            ("a/path/to/symlink/python3.8", EntryType.SYMLINK, True),
-            ("a/path/to/text/requirements.txt", EntryType.FILE, True),
-            ("a/path/to/exec/activate", EntryType.EXECUTABLE, True),
+        # Item options
+        path = "a/path/to/a/new/directory"
+        type = EntryType.DIRECTORY
+        history = EndStateHistory([True, False, False, True, True, True])
+
+        settings = Settings(0)
+        settings |= Settings.FANCY
+
+        generator = create_filestring_builder(settings)
+        output = generator(path, type, history)
+        expected_output = "    ║   ║           ╚══ directory"
+        self.assertEqual(output, expected_output)
+
+    def test_filestring_builder_fancy_and_colorized(self):
+        """
+        Tests that the filestring builder is correctly created to make output string both fancy and colorized
+        """
+        # Item options
+        path = "a/path/to/a/new/directory"
+        type = EntryType.DIRECTORY
+        history = EndStateHistory([True, False, False, True, True, True])
+
+        settings = Settings(0)
+        settings |= Settings.FANCY
+        settings |= Settings.COLORIZE
+
+        generator = create_filestring_builder(settings)
+        output = generator(path, type, history)
+        expected_output = "    ║   ║           ╚══ %sdirectory%s" % (
+            Fore.BLUE,
+            Fore.WHITE,
         )
-        mocked_entries = []
-        for path, type, colorize in mock_values:
-            mock = Mock()
-            mock.path = path
-            mock.type = type
-            mocked_entries.append((mock, colorize))
-        output_names = (
-            Fore.BLUE + "__pycache__" + Fore.WHITE,
-            "pytree",
-            Fore.GREEN + "python3.8" + Fore.WHITE,
-            "requirements.txt",
-            Fore.RED + "activate" + Fore.WHITE,
-        )
-        for name, entry in zip(output_names, mocked_entries):
-            self.assertEqual(name, get_name(entry[0], entry[1]))
+        self.assertEqual(output, expected_output)
 
 
 if __name__ == "__main__":

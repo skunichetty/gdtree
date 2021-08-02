@@ -1,12 +1,36 @@
 """
-A set of utility functions used by pytree
+A set of smaller (but important) utility constants, functions, and classes used by pytree
 """
 
-import os
-from pytree.entry_type import EntryType
+from os import access, X_OK, DirEntry
+from enum import Enum, Flag, auto
+
+# Maximum depth of traversal
+MAX_DEPTH = 32
 
 
-def get_type(entry: os.DirEntry) -> EntryType:
+class EntryType(Enum):
+    """
+    Enum type consisting of all possible directory entry types encountered by pytree.
+    """
+
+    DIRECTORY = 1
+    FILE = 2
+    EXECUTABLE = 3
+    SYMLINK = 4
+
+
+class Settings(Flag):
+    """
+    Holds all program settings
+    """
+
+    COLORIZE = auto()
+    FANCY = auto()
+    REVERSE = auto()
+
+
+def get_type(entry: DirEntry) -> EntryType:
     """
     Gets the type of directory entry held by this file.
 
@@ -37,6 +61,6 @@ def get_type(entry: os.DirEntry) -> EntryType:
     if is_dir:
         return EntryType.DIRECTORY
 
-    if os.access(entry.path, os.X_OK, follow_symlinks=False):
+    if access(entry.path, X_OK, follow_symlinks=False):
         return EntryType.EXECUTABLE
     return EntryType.FILE

@@ -2,89 +2,107 @@
 A set of filestring generating utilities.
 """
 
-import colorama
-from pytree.directory_tree_entry import DirectoryTreeEntry
-import pytree.constants as constants
-import os
+from pytree.end_state_history import EndStateHistory
+from pytree.utils import EntryType, Settings
+from os.path import basename
+from typing import Callable, Dict
+from colorama import Fore
 
 
-def generate_filestring(entry: DirectoryTreeEntry, do_colorize: bool) -> str:
+# =====Prefixes=====
+BRANCH_PREFIX = "\u251C\u2500\u2500 "
+BRANCH_END_PREFIX = "\u2514\u2500\u2500 "
+SPACER_WITH_LIMB = "\u2502   "
+SPACER = "    "
+# ==Fancy Prefixes==
+SPACER_WITH_LIMB_FANCY = "\u2551   "
+BRANCH_END_PREFIX_FANCY = "\u255A\u2550\u2550 "
+BRANCH_PREFIX_FANCY = "\u2560\u2550\u2550 "
+
+# =====Prefix Sets=====
+# These are maps from End state to the prefix strings which are printed
+# before file names in the printed output
+# ==Subsets==
+EXT = {True: SPACER, False: SPACER_WITH_LIMB}
+FANCY = {True: SPACER, False: SPACER_WITH_LIMB_FANCY}
+FILE_EXT = {True: BRANCH_END_PREFIX, False: BRANCH_PREFIX}
+FILE_FANCY = {True: BRANCH_END_PREFIX_FANCY, False: BRANCH_PREFIX_FANCY}
+# ==Main Sets==
+PREFIX_REGULAR = {True: FILE_EXT, False: EXT}
+PREFIX_FANCY = {True: FILE_FANCY, False: FANCY}
+
+# The default color to be printed
+DEFAULT_COLOR = Fore.WHITE
+
+# Mapping directory entry types to colors in terminal
+COLORMAP = {
+    EntryType.EXECUTABLE: Fore.RED,
+    EntryType.FILE: DEFAULT_COLOR,
+    EntryType.SYMLINK: Fore.GREEN,
+    EntryType.DIRECTORY: Fore.BLUE,
+}
+
+
+def _get_prefix(end_state: bool, prefix_subset: Dict[bool, str]) -> str:
     """
-    Generates filestring to print to output given a corresponding entry
+    Returns proper prefix given state and prefix_subset.
 
     Args:
-        entry (DirectoryTreeEntry): The entry being considered
+        end_state (bool): End state for this prefix.
+        prefix_subset (Dict[bool, str]): A map of end state to prefixes.
+
+    Raises:
+        ValueError: Raises if the state given is invalid (end_state not boolean)
 
     Returns:
-        str: The filestring for this entry as to be printed out.
+        str: The correct prefix in the prefix_set
     """
-    prefix = generate_prefix(entry)
-    name = get_name(entry, do_colorize)
-    string = [prefix, name]
-    return "".join(string)
+    try:
+        output_prefix = prefix_subset[end_state]
+    except KeyError:
+        raise ValueError("Invalid state type")
+    return output_prefix
 
 
-def _get_prefix(is_end: bool) -> str:
+def build_prefix(history: EndStateHistory) -> str:
     """
-    Gets the prefix given state value at that depth.
+    Build a regular prefix from an EndStateHistory
 
     Args:
-        is_end (bool): The state of the entry; is at the end of a directory tree or not.
+        history (EndStateHistory): History of the end states for this entry
 
     Returns:
-        str: Correct prefix value given that state
+        str: The corresponding prefix
     """
-    if is_end:
-        return constants.SPACER
-    return constants.SPACER_WITH_LIMB
+    last_index = len(history) - 1
+    prefixes = [""] * (last_index + 1)
+    for index, state in enumerate(history):
+        prefix_subset = PREFIX_REGULAR[index == last_index]
+        prefix = _get_prefix(state, prefix_subset)
+        prefixes[index] = prefix
+    return "".join(prefixes)
 
 
-def _get_prefix_file(is_end: bool) -> str:
+def build_fancy_prefix(history: EndStateHistory) -> str:
     """
-    Gets the prefix directly preceding a file name given state value at that depth.
+    Builds a fancy prefix from an EndStateHistory
 
     Args:
-        is_end (bool): The state of the entry; is at the end of a directory tree or not.
+        history (EndStateHistory): History of the end states for this entry
 
     Returns:
-        str: Correct prefix value given that state
+        str: The corresponding prefix
     """
-    if is_end:
-        return constants.BRANCH_END_PREFIX
-    return constants.BRANCH_PREFIX
+    last_index = len(history) - 1
+    prefixes = [""] * (last_index + 1)
+    for index, state in enumerate(history):
+        prefix_subset = PREFIX_FANCY[index == last_index]
+        prefix = _get_prefix(state, prefix_subset)
+        prefixes[index] = prefix
+    return "".join(prefixes)
 
 
-def generate_prefix(entry: DirectoryTreeEntry) -> str:
-    """
-    Generates prefix string from traversal history stored in a
-    DirectoryTreeEntry. This is responsible for generating the set of fancy box characters
-    which precede each filename
-
-    Args:
-        entry (DirectoryTreeEntry): The current entry
-
-    Returns:
-        str: The prefix string corresponding to the location of the entry
-    """
-    depth = entry.history.depth
-    if depth == 0:
-        return ""
-    mask = 1
-    prefixes = []
-    # To generate string, start from LSB and iterate forward
-    # File prefix lies at MSB (depth - 1)
-    for i in range(depth):
-        current_state = entry.history.history & mask
-        prefix_function = _get_prefix
-        if i == depth - 1:
-            prefix_function = _get_prefix_file
-        prefixes.append(prefix_function(current_state))
-        mask <<= 1
-    result = "".join(prefixes)
-    return result
-
-
-def get_filestring_color(entry: DirectoryTreeEntry) -> str:
+def get_filestring_color(type: EntryType) -> str:
     """
     Get the color used in the filestring for the given entry. These are
     ANSI escape strings that colorize output text in the terminal.
@@ -99,43 +117,71 @@ def get_filestring_color(entry: DirectoryTreeEntry) -> str:
         str: The ANSI color escape sequence
     """
     try:
-        color = constants.COLORMAP[entry.type]
+        color = COLORMAP[type]
     except KeyError:
         # Entry Type is not in COLORMAP - thus it is not a valid
         # file type
-        raise ValueError(entry.type)
+        raise ValueError(type)
     return color
 
 
-def colorize(color: str, text: str) -> str:
+def type_colorize(text: str, type: EntryType) -> str:
     """
-    Colorizes the given text to the given color. Will terminate text with the
-    default color as defined in constants.py
+    Colorizes the text given depending on the type
 
     Args:
-        color (str): The ANSI escape sequence giving the color to colorize to
         text (str): The text to colorize
+        type (EntryType): The type of text with which colorization is performed.
+
+    Raises:
+        ValueError: Raises if an invalid type is given
 
     Returns:
-        str: The properly escaped and colorized string
+        str: The colorized text
     """
-    return "".join([color, text, constants.DEFAULT_COLOR])
+    if type == EntryType.FILE:
+        # Files have no special colors - so don't even perform any colorization
+        return text
+    color_escape_seq = get_filestring_color(type)
+    return "".join([color_escape_seq, text, DEFAULT_COLOR])
 
 
-def get_name(entry: DirectoryTreeEntry, do_colorize: bool) -> str:
+def create_filestring_builder(
+    settings: Settings,
+) -> Callable[[str, EntryType, EndStateHistory], str]:
     """
-    Gets the properly formatted entry name from the entry given.
+    Generates a filestring builder function from user settings
 
     Args:
-        entry (DirectoryTreeEntry): The entry whose formatted name is returned
-        do_colorize (bool): If true, the name will be colorized appropriately; else not
+        settings (Settings): User defined settings, specified at command line
 
     Returns:
-        str: The properly formatted entry name
+        Callable[[str, EntryType, EndStateHistory], str]: The filestring builder function
+        with the settings enabled
     """
-    color = get_filestring_color(entry)
-    name = os.path.basename(entry.path)
-    if not do_colorize or color == constants.DEFAULT_COLOR:
-        # in either case, do not colorize
-        return name
-    return colorize(color, name)
+    colorize = bool(settings & Settings.COLORIZE)
+    fancy = bool(settings & Settings.FANCY)
+
+    prefix_function = build_fancy_prefix if fancy else build_prefix
+
+    def build_filestring(
+        path: str, type: EntryType, history: EndStateHistory
+    ) -> str:
+        """
+        Builds a filestring for a directory entry
+
+        Args:
+            path (str): The path to the entry
+            type (EntryType): The type of entry
+            history (EndStateHistory): End state history of this entry's location
+
+        Returns:
+            str: The properly formatted filestring
+        """
+        prefix = prefix_function(history)
+        name = basename(path)
+        if colorize:
+            name = type_colorize(name, type)
+        return "".join((prefix, name))
+
+    return build_filestring

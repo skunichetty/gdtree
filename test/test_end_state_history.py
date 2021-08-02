@@ -1,5 +1,5 @@
 from unittest import TestCase, main
-import pytree.constants as constants
+from pytree.utils import MAX_DEPTH
 from pytree.end_state_history import DepthError, EndStateHistory
 
 
@@ -16,7 +16,7 @@ class TestEndStateHistory(TestCase):
         Tests that the length of the input boolean array does not exceed
         maximum allowed depth
         """
-        history = [False] * (constants.MAX_DEPTH + 1)
+        history = [False] * (MAX_DEPTH + 1)
         with self.assertRaises(ValueError):
             entry = EndStateHistory(history)
 
@@ -46,9 +46,9 @@ class TestEndStateHistory(TestCase):
         """
         Tests that the history length is properly returned at maximum depth
         """
-        history = [False] * constants.MAX_DEPTH
+        history = [False] * MAX_DEPTH
         entry = EndStateHistory(history)
-        self.assertEqual(len(entry), constants.MAX_DEPTH)
+        self.assertEqual(len(entry), MAX_DEPTH)
 
     def test_history_append_length(self):
         """
@@ -71,7 +71,7 @@ class TestEndStateHistory(TestCase):
         Tests that an error is raised when trying to update history
         past the max possible depth
         """
-        entry = EndStateHistory([False] * constants.MAX_DEPTH)
+        entry = EndStateHistory([False] * MAX_DEPTH)
         with self.assertRaises(DepthError):
             entry.append(True)
 
@@ -143,7 +143,7 @@ class TestEndStateHistory(TestCase):
         Tests that a depth error is raised when attempting to extend
         one history past the maximum depth
         """
-        entry_one = EndStateHistory([False] * constants.MAX_DEPTH)
+        entry_one = EndStateHistory([False] * MAX_DEPTH)
         entry_two = EndStateHistory([False, False, True])
         with self.assertRaises(DepthError):
             entry_one.extend(entry_two)
@@ -153,7 +153,7 @@ class TestEndStateHistory(TestCase):
         Tests that a depth error is raised when attempting to extend
         one history exactly one past the maximum depth
         """
-        entry_one = EndStateHistory([False] * (constants.MAX_DEPTH - 2))
+        entry_one = EndStateHistory([False] * (MAX_DEPTH - 2))
         entry_two = EndStateHistory([False, False, True])
         with self.assertRaises(DepthError):
             entry_one.extend(entry_two)
