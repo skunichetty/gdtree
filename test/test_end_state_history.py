@@ -180,6 +180,15 @@ class TestEndStateHistory(TestCase):
         for state, expected_output in zip(entry_two, output_values):
             self.assertEqual(state, expected_output)
 
+    def test_extend_depth_change(self):
+        """
+        Tests that extending a history increments depth properly
+        """
+        entry_one = EndStateHistory([True, False, True])
+        entry_two = EndStateHistory([False, False, True])
+        entry_one.extend(entry_two)
+        self.assertEqual(len(entry_one), 6)
+
 
 if __name__ == "__main__":
     main()

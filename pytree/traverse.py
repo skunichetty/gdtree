@@ -3,59 +3,120 @@ Directory tree traversal utilities
 """
 
 
-import os
-from pytree.traversal_history import TraversalHistory
-from pytree.entry_type import EntryType
-from pytree.directory_tree_entry import DirectoryTreeEntry
-from typing import Generator
+from os.path import basename
+from os import scandir, DirEntry
+from pytree.end_state_history import EndStateHistory
+from pytree.utils import EntryType, MAX_DEPTH
+from typing import Generator, Iterator, Tuple, Set
 from pytree.utils import get_type
-import pytree.constants as constants
+
+
+def filter_prefix(
+    scandir_it: Generator[DirEntry, None, None], blacklisted_str: str
+) -> Iterator:
+    """
+    Filters all os.DirEntry objects whose filename has the blacklisted prefix string
+    Args:
+        scandir_it (Generator[DirEntry, None, None]): The input generator from os.scandir()
+        blacklisted_str (str): The string prefix to filter out
+
+    Yields:
+        Iterator: An iterator of filtered values
+    """
+    return filter(lambda x: not x.name.startswith(blacklisted_str), scandir_it)
+
+
+def construct_from_history(
+    history: EndStateHistory, is_end: bool
+) -> EndStateHistory:
+    """
+    Constructs a new EndStateHistory from a previous history, and appends a new end state to it.
+
+    Args:
+        history (EndStateHistory): The previous history
+        is_end (bool): The new end state to append to the new history
+
+    Returns:
+        EndStateHistory: The new end state history
+    """
+    new_history = EndStateHistory()
+    new_history.extend(history)
+    new_history.append(is_end)
+    return new_history
 
 
 def _traverse(
-    entry: DirectoryTreeEntry,
-) -> Generator[DirectoryTreeEntry, None, None]:
-    # Open directory and scan items in it
+    path: str, history: EndStateHistory, reverse: bool
+) -> Generator[Tuple[str, EntryType, EndStateHistory], None, None]:
+    """
+    Traverses the directory starting at path
+
+    Args:
+        path (str): The top level directory to traverse downward from
+        history (EndStateHistory): The end state traversal history up to this point
+        reverse (bool): Reverses the order of traversal (lexicographical order)
+
+    Yields:
+        Generator[Tuple[str, EntryType, EndStateHistory], None, None]: Generates the paths,
+        types, and end state histories of the entries traversed
+    """
     try:
-        scandir_it = os.scandir(entry.path)
-    except OSError:
+        scandir_it = scandir(path)
+    except NotADirectoryError as err:
+        return
+    except OSError as err:
         # We don't want to fail the entire traversal if something fails on
         # OS call - continue with traversal
+        # This will also catch if the input directory is bad, we rely on EAFP principle here
+        print(err)
         return
-
-    # Generate sorted list from iterator
     try:
         with scandir_it:
-            sorted_it = sorted(scandir_it, key=lambda x: x.name)
-    except OSError:
+            filtered_it = list(filter_prefix(scandir_it, "."))
+    except OSError as err:
         # Same OSError policy as above
+        print(err)
         return
 
-    # Update once to get the new history and depth - less calls to original entry
-    new_history, new_depth = entry.history.add_history(False)
-
-    num_entries = len(sorted_it)
-    for index, directory_entry in enumerate(sorted_it):
-        # we want to avoid . directories and files (hidden by nature)
-        if not os.path.basename(directory_entry.path).startswith("."):
-            type = get_type(directory_entry)
-
-            # Create a new history entry that reflects the updated depth
-            current_subentry_history = TraversalHistory(new_history, new_depth)
-            # If we are at the end, update the entry's history to reflect that state
-            if index == num_entries - 1:
-                current_subentry_history.update_history(new_depth - 1, True)
-
-            current_subentry = DirectoryTreeEntry(
-                directory_entry.path, type, current_subentry_history
+    filtered_it.sort(key=lambda x: x.name, reverse=reverse)
+    last_index = len(filtered_it) - 1
+    for index, directory_entry in enumerate(filtered_it):
+        type = get_type(directory_entry)
+        subentry_history = construct_from_history(history, index == last_index)
+        yield directory_entry.name, type, subentry_history
+        if type == EntryType.DIRECTORY and len(subentry_history) < MAX_DEPTH:
+            yield from _traverse(
+                directory_entry.path, subentry_history, reverse
             )
 
-            yield current_subentry
 
-            if type == EntryType.DIRECTORY and new_depth < constants.MAX_DEPTH:
-                yield from _traverse(current_subentry)
+def reverse_traverse_directory(
+    start_dir: str,
+) -> Generator[Tuple[str, EntryType, EndStateHistory], None, None]:
+    """
+    Traverses the directory given and yields the entries found in reverse lexicographical order
+
+    Args:
+        start_dir (str): Absolute path to the directory to traverse
+
+    Yields:
+        Generator[Tuple[str, EntryType, EndStateHistory], None, None]: Generates the paths,
+        types, and end state histories of the entries traversed
+    """
+    yield from _traverse(start_dir, EndStateHistory(), True)
 
 
-def traverse(start_dir: str) -> Generator[DirectoryTreeEntry, None, None]:
-    starting_entry = DirectoryTreeEntry(start_dir, EntryType.DIRECTORY)
-    yield from _traverse(starting_entry)
+def traverse_directory(
+    start_dir: str,
+) -> Generator[Tuple[str, EntryType, EndStateHistory], None, None]:
+    """
+    Traverses the directory given and yields the entries found
+
+    Args:
+        start_dir (str): Absolute path to the directory to traverse
+
+    Yields:
+        Generator[Tuple[str, EntryType, EndStateHistory], None, None]: Generates the paths,
+        types, and end state histories of the entries traversed
+    """
+    yield from _traverse(start_dir, EndStateHistory(), False)

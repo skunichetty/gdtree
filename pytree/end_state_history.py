@@ -124,6 +124,7 @@ class EndStateHistory:
         other_history = other.history
         other_history <<= self.depth
         self.history |= other_history
+        self.depth += other.depth
 
 
 class _StateHistoryIterator:

@@ -4,6 +4,8 @@ A set of smaller (but important) utility constants, functions, and classes used 
 
 from os import access, X_OK, DirEntry
 from enum import Enum, Flag, auto
+from typing import Callable
+from time import perf_counter
 
 # Maximum depth of traversal
 MAX_DEPTH = 32

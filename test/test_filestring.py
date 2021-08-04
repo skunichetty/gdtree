@@ -83,8 +83,8 @@ class TestFilestring(TestCase):
 
     def test_prefix_true(self):
         """
-        Tests that the correct prefix is returned from a given prefix set when
-        end state is True
+        Tests that the correct prefix is returned from a given prefix set
+        when end state is True
         """
         prefix_set = {True: "prefix1", False: "prefix2"}
         output = _get_prefix(True, prefix_set)
@@ -92,8 +92,8 @@ class TestFilestring(TestCase):
 
     def test_prefix_false(self):
         """
-        Tests that the correct prefix is returned from a given prefix set when
-        end state is False
+        Tests that the correct prefix is returned from a given prefix set
+        when end state is False
         """
         prefix_set = {True: "prefix1", False: "prefix2"}
         output = _get_prefix(False, prefix_set)
@@ -101,8 +101,8 @@ class TestFilestring(TestCase):
 
     def test_prefix_error(self):
         """
-        Tests that the correct prefix is returned from a given prefix set when
-        end state is True
+        Tests that the correct prefix is returned from a given prefix set
+        when end state is True
         """
         prefix_set = {True: "prefix1", False: "prefix2"}
         with self.assertRaises(ValueError):
@@ -110,8 +110,8 @@ class TestFilestring(TestCase):
 
     def test_prefix_generation_end_false(self):
         """
-        Tests that the proper prefix is generated given end state history with the most recent
-        state value being False
+        Tests that the proper prefix is generated given end state history
+        with the most recent state value being False
         """
         history = EndStateHistory([True, False, False, True, True, False])
         output_string = build_prefix(history)
@@ -120,8 +120,8 @@ class TestFilestring(TestCase):
 
     def test_prefix_generation_end_true(self):
         """
-        Tests that the proper prefix is generated given end state history with the most recent
-        state value being True
+        Tests that the proper prefix is generated given end state history
+        with the most recent state value being True
         """
         history = EndStateHistory([True, False, False, True, True, True])
         output_string = build_prefix(history)
@@ -130,7 +130,8 @@ class TestFilestring(TestCase):
 
     def test_prefix_generation_one_entry(self):
         """
-        Tests that the proper prefix is generated for a state history with only one entry
+        Tests that the proper prefix is generated for a state history with
+        only one entry
         """
         history = EndStateHistory([True])
         output_string = build_prefix(history)
@@ -139,8 +140,8 @@ class TestFilestring(TestCase):
 
     def test_prefix_fancy_generation_end_false(self):
         """
-        Tests that a fancy prefix is generated given end state history with the most recent
-        state value being False
+        Tests that a fancy prefix is generated given end state history with
+        the most recent state value being False
         """
         history = EndStateHistory([True, False, False, True, True, False])
         output_string = build_fancy_prefix(history)
@@ -149,8 +150,8 @@ class TestFilestring(TestCase):
 
     def test_prefix_fancy_generation_end_true(self):
         """
-        Tests that a fancy prefix is generated given end state history with the most recent
-        state value being True
+        Tests that a fancy prefix is generated given end state history with
+        the most recent state value being True
         """
         history = EndStateHistory([True, False, False, True, True, True])
         output_string = build_fancy_prefix(history)
@@ -159,7 +160,8 @@ class TestFilestring(TestCase):
 
     def test_prefix_fancy_generation_one_entry(self):
         """
-        Tests that the proper prefix is generated for a state history with only one entry
+        Tests that the proper prefix is generated for a state history with
+        only one entry
         """
         history = EndStateHistory([True])
         output_string = build_fancy_prefix(history)
@@ -168,10 +170,11 @@ class TestFilestring(TestCase):
 
     def test_filestring_builder_basic(self):
         """
-        Tests that the filestring builder is correctly created from default settings
+        Tests that the filestring builder is correctly created from default
+        settings
         """
         # Item options
-        path = "a/path/to/a/new/directory"
+        path = "directory"
         type = EntryType.DIRECTORY
         history = EndStateHistory([True, False, False, True, True, True])
 
@@ -184,10 +187,11 @@ class TestFilestring(TestCase):
 
     def test_filestring_builder_colorization(self):
         """
-        Tests that the filestring builder is correctly created to colorize output string
+        Tests that the filestring builder is correctly created to colorize
+        output string
         """
         # Item options
-        path = "a/path/to/a/new/directory"
+        path = "directory"
         type = EntryType.DIRECTORY
         history = EndStateHistory([True, False, False, True, True, True])
 
@@ -204,10 +208,11 @@ class TestFilestring(TestCase):
 
     def test_filestring_builder_fancy(self):
         """
-        Tests that the filestring builder is correctly created to make output string fancy
+        Tests that the filestring builder is correctly created to make
+        output string fancy
         """
         # Item options
-        path = "a/path/to/a/new/directory"
+        path = "directory"
         type = EntryType.DIRECTORY
         history = EndStateHistory([True, False, False, True, True, True])
 
@@ -221,10 +226,11 @@ class TestFilestring(TestCase):
 
     def test_filestring_builder_fancy_and_colorized(self):
         """
-        Tests that the filestring builder is correctly created to make output string both fancy and colorized
+        Tests that the filestring builder is correctly created to make
+        output string both fancy and colorized
         """
         # Item options
-        path = "a/path/to/a/new/directory"
+        path = "directory"
         type = EntryType.DIRECTORY
         history = EndStateHistory([True, False, False, True, True, True])
 

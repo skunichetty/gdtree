@@ -1,58 +1,149 @@
-from os import DirEntry
-from pytree.entry_type import EntryType
+from os import DirEntry, scandir
+from pytree.end_state_history import EndStateHistory
+from pytree.utils import EntryType
 from unittest import TestCase, main
-from unittest.mock import Mock, patch
-from pytree.app import get_type
-from pytree.directory_tree_entry import DirectoryTreeEntry
-from pytree.traverse import traverse
+from unittest.mock import patch, Mock
+from pytree.traverse import (
+    filter_prefix,
+    reverse_traverse_directory,
+    traverse_directory,
+    construct_from_history,
+)
 
 
 class TestTraversal(TestCase):
-    mocked_directories = []
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        mock_values = (
-            ("__pycache__", True, False),
-            ("pytree", True, False),
-            ("python3.8", False, True),
-            ("requirements.txt", False, False),
-        )
-        dirs = []
-        for path, is_dir, is_symlink in mock_values:
-            mock = Mock(spec=DirEntry)
-            mock.path = path
-            mock.is_dir.return_value = is_dir
-            mock.is_symlink.return_value = is_symlink
-            dirs.append(mock)
-        cls.mocked_directories = dirs
-
-    @patch("pytree.traverse.os.scandir")
-    @patch("pytree.traverse.os.access")
-    def test_traverse(self, mocked_scandir, mocked_access):
+    @patch("pytree.traverse.scandir", spec=scandir)
+    @patch("pytree.utils.access")
+    def test_traverse(self, mocked_access, mocked_scandir):
         """
         Tests that traversal of a directory tree is completed
         """
-        mocked_scandir.return_value = self.mocked_directories
-        mocked_access.return_value = True
-        outputs = [
-            DirectoryTreeEntry("__pycache__", EntryType.DIRECTORY, 1, 0b0),
-            DirectoryTreeEntry("pytree", EntryType.DIRECTORY, 1, 0b0),
-            DirectoryTreeEntry("python3.8", EntryType.SYMLINK, 1, 0b0),
-            DirectoryTreeEntry("requirements.txt", EntryType.FILE, 1, 0b1),
+        mocked_values = [
+            ("a/path/to/__pycache__", "__pycache__", False, True),
+            ("a/path/to/pytree", "pytree", False, False),
+            ("a/path/to/python3.8", "python3.8", False, True),
+            ("a/path/to/requirements.txt", "requirements.txt", False, False),
         ]
-        for item, expected_output in zip(traverse("random_dir"), outputs):
-            self.assertEqual(item.name == expected_output.name)
-            self.assertEqual(item.type == expected_output.type)
-            self.assertEqual(item.depth == expected_output.depth)
-            self.assertEqual(item.history == expected_output.history)
+        mocked_directories = []
+        for path, name, is_dir, is_symlink in mocked_values:
+            mock = Mock(spec=DirEntry)
+            mock.name = name
+            mock.path = path
+            mock.is_dir.return_value = is_dir
+            mock.is_symlink.return_value = is_symlink
+            mocked_directories.append(mock)
+        mocked_scandir.return_value.__iter__.return_value = iter(
+            mocked_directories
+        )
+        mocked_access.return_value = False
+        mock_outputs = (
+            (
+                "__pycache__",
+                EntryType.SYMLINK,
+                EndStateHistory([False]),
+            ),
+            (
+                "python3.8",
+                EntryType.SYMLINK,
+                EndStateHistory([False]),
+            ),
+            ("pytree", EntryType.FILE, EndStateHistory([False])),
+            (
+                "requirements.txt",
+                EntryType.FILE,
+                EndStateHistory([True]),
+            ),
+        )
+        for item, expected_output in zip(
+            traverse_directory("random_dir"), mock_outputs
+        ):
+            self.assertEqual(item[0], expected_output[0])
+            self.assertEqual(item[1], expected_output[1])
 
-    def test_traverse_error(self):
+    @patch("pytree.traverse.scandir", spec=scandir)
+    @patch("pytree.utils.access")
+    def test_reverse_traverse(self, mocked_access, mocked_scandir):
         """
-        Tests that traversal fails when given an invalid directory
+        Tests that traversal of a directory tree is completed
         """
-        with self.assertRaises(NotADirectoryError):
-            it = traverse("///")
+        mocked_values = [
+            ("a/path/to/__pycache__", "__pycache__", False, True),
+            ("a/path/to/pytree", "pytree", False, False),
+            ("a/path/to/python3.8", "python3.8", False, True),
+            ("a/path/to/requirements.txt", "requirements.txt", False, False),
+        ]
+        mocked_directories = []
+        for path, name, is_dir, is_symlink in mocked_values:
+            mock = Mock(spec=DirEntry)
+            mock.name = name
+            mock.path = path
+            mock.is_dir.return_value = is_dir
+            mock.is_symlink.return_value = is_symlink
+            mocked_directories.append(mock)
+        mocked_scandir.return_value.__iter__.return_value = iter(
+            mocked_directories
+        )
+        mocked_access.return_value = False
+        mock_outputs = (
+            (
+                "requirements.txt",
+                EntryType.FILE,
+                EndStateHistory([True]),
+            ),
+            ("pytree", EntryType.FILE, EndStateHistory([False])),
+            (
+                "python3.8",
+                EntryType.SYMLINK,
+                EndStateHistory([False]),
+            ),
+            (
+                "__pycache__",
+                EntryType.SYMLINK,
+                EndStateHistory([False]),
+            ),
+        )
+        for item, expected_output in zip(
+            reverse_traverse_directory("random_dir"), mock_outputs
+        ):
+            self.assertEqual(item[0], expected_output[0])
+            self.assertEqual(item[1], expected_output[1])
+
+    def test_filter_prefix(self):
+        """
+        Tests that scandir entries are properly filtered given a
+        blacklist prefix
+        """
+        mocked_values = [
+            ("a/path/to/.pycache", ".pycache", False, True),
+            ("a/path/to/..", "..", False, True),
+            ("a/path/to/pytree", "pytree", False, False),
+            ("a/path/to/python3.8", "python3.8", False, True),
+            ("a/path/to/requirements.txt", "requirements.txt", False, False),
+        ]
+        mocked_directories = []
+        for path, name, is_dir, is_symlink in mocked_values:
+            mock = Mock(spec=DirEntry)
+            mock.name = name
+            mock.path = path
+            mock.is_dir.return_value = is_dir
+            mock.is_symlink.return_value = is_symlink
+            mocked_directories.append(mock)
+        it = iter(mocked_directories)
+
+        outputs = mocked_directories[2:]
+        output_it = list(filter_prefix(it, "."))
+        for expected_output, output in zip(outputs, output_it):
+            self.assertEqual(expected_output, output)
+
+    def test_construct_from_history(self):
+        """
+        Tests whether history is constructed from previous values as expected
+        """
+        history = EndStateHistory([True, False, False])
+        new_history = EndStateHistory([True, False, False, True])
+        output_history = construct_from_history(history, True)
+        for expected, output in zip(new_history, output_history):
+            self.assertEqual(expected, output)
 
 
 if __name__ == "__main__":

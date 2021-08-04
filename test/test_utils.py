@@ -117,5 +117,14 @@ class TestTypeExtraction(TestCase):
         assert get_type(mock) == EntryType.EXECUTABLE
 
 
+class TestSettingsExtraction(TestCase):
+    def test_settings_extraction(self):
+        """
+        Tests settings extraction from args given by ArgumentParser
+        """
+        mock_args = Mock()
+        pass
+
+
 if __name__ == "__main__":
     main()

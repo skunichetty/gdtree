@@ -23,10 +23,26 @@ BRANCH_PREFIX_FANCY = "\u2560\u2550\u2550 "
 # These are maps from End state to the prefix strings which are printed
 # before file names in the printed output
 # ==Subsets==
-EXT = {True: SPACER, False: SPACER_WITH_LIMB}
-FANCY = {True: SPACER, False: SPACER_WITH_LIMB_FANCY}
-FILE_EXT = {True: BRANCH_END_PREFIX, False: BRANCH_PREFIX}
-FILE_FANCY = {True: BRANCH_END_PREFIX_FANCY, False: BRANCH_PREFIX_FANCY}
+EXT = {
+    # External prefixes, show branch location rather than file location
+    True: SPACER,
+    False: SPACER_WITH_LIMB,
+}
+FANCY = {
+    # Fancy external prefixes,
+    True: SPACER,
+    False: SPACER_WITH_LIMB_FANCY,
+}
+FILE_EXT = {
+    # File prefixes, show file location within subdirectory
+    True: BRANCH_END_PREFIX,
+    False: BRANCH_PREFIX,
+}
+FILE_FANCY = {
+    # Fancy file prefixes
+    True: BRANCH_END_PREFIX_FANCY,
+    False: BRANCH_PREFIX_FANCY,
+}
 # ==Main Sets==
 PREFIX_REGULAR = {True: FILE_EXT, False: EXT}
 PREFIX_FANCY = {True: FILE_FANCY, False: FANCY}
@@ -64,6 +80,18 @@ def _get_prefix(end_state: bool, prefix_subset: Dict[bool, str]) -> str:
     return output_prefix
 
 
+def _build_prefix(
+    history: EndStateHistory, prefix_set: Dict[bool, Dict[bool, str]]
+) -> str:
+    last_index = len(history) - 1
+    prefixes = [""] * (last_index + 1)
+    for index, state in enumerate(history):
+        prefix_subset = prefix_set[index == last_index]
+        prefix = _get_prefix(state, prefix_subset)
+        prefixes[index] = prefix
+    return "".join(prefixes)
+
+
 def build_prefix(history: EndStateHistory) -> str:
     """
     Build a regular prefix from an EndStateHistory
@@ -74,13 +102,7 @@ def build_prefix(history: EndStateHistory) -> str:
     Returns:
         str: The corresponding prefix
     """
-    last_index = len(history) - 1
-    prefixes = [""] * (last_index + 1)
-    for index, state in enumerate(history):
-        prefix_subset = PREFIX_REGULAR[index == last_index]
-        prefix = _get_prefix(state, prefix_subset)
-        prefixes[index] = prefix
-    return "".join(prefixes)
+    return _build_prefix(history, PREFIX_REGULAR)
 
 
 def build_fancy_prefix(history: EndStateHistory) -> str:
@@ -93,13 +115,7 @@ def build_fancy_prefix(history: EndStateHistory) -> str:
     Returns:
         str: The corresponding prefix
     """
-    last_index = len(history) - 1
-    prefixes = [""] * (last_index + 1)
-    for index, state in enumerate(history):
-        prefix_subset = PREFIX_FANCY[index == last_index]
-        prefix = _get_prefix(state, prefix_subset)
-        prefixes[index] = prefix
-    return "".join(prefixes)
+    return _build_prefix(history, PREFIX_FANCY)
 
 
 def get_filestring_color(type: EntryType) -> str:
@@ -165,7 +181,7 @@ def create_filestring_builder(
     prefix_function = build_fancy_prefix if fancy else build_prefix
 
     def build_filestring(
-        path: str, type: EntryType, history: EndStateHistory
+        name: str, type: EntryType, history: EndStateHistory
     ) -> str:
         """
         Builds a filestring for a directory entry
@@ -179,7 +195,6 @@ def create_filestring_builder(
             str: The properly formatted filestring
         """
         prefix = prefix_function(history)
-        name = basename(path)
         if colorize:
             name = type_colorize(name, type)
         return "".join((prefix, name))
