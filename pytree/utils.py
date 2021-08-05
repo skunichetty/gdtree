@@ -5,7 +5,6 @@ A set of smaller (but important) utility constants, functions, and classes used 
 from os import access, X_OK, DirEntry
 from enum import Enum, Flag, auto
 from typing import Callable
-from time import perf_counter
 
 # Maximum depth of traversal
 MAX_DEPTH = 32
@@ -55,7 +54,7 @@ def get_type(entry: DirEntry) -> EntryType:
         return EntryType.SYMLINK
 
     try:
-        is_dir = entry.is_dir(follow_symlinks=False)
+        is_dir = entry.is_dir()
     except OSError:
         # If error arises, we know that it cannot be of the type
         # expected - To not stop execution, return False
@@ -63,6 +62,6 @@ def get_type(entry: DirEntry) -> EntryType:
     if is_dir:
         return EntryType.DIRECTORY
 
-    if access(entry.path, X_OK, follow_symlinks=False):
+    if access(entry.path, X_OK):
         return EntryType.EXECUTABLE
     return EntryType.FILE

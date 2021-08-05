@@ -1,17 +1,16 @@
-from os import getcwd, access
 from os.path import basename, abspath
 from sys import platform
 from typing import Generator, Tuple, List
 from pytree.traverse import reverse_traverse_directory, traverse_directory
 from colorama import init
 from pytree.filestring import create_filestring_builder
-from pytree.utils import EntryType, Settings
+from pytree.utils import Settings
 from argparse import Namespace, ArgumentParser
 
 
 def start():
     """
-    The starting function for the tree generation. If you want to print the tree 
+    The starting function for the tree generation. If you want to print the tree
     function programmatically instead of on the command line, run this function.
     """
     if platform == "win32" or platform == "cygwin":
@@ -19,13 +18,14 @@ def start():
         # for use on Windows
         init()
     start_dir, settings = parse_settings()
+    count = 0
     for entry in generate_tree(start_dir, settings):
         print(entry)
+        count += 1
+    print("Entries: %d" % count)
 
 
-def generate_tree(
-    directory: str, settings: Settings
-) -> Generator[str, None, None]:
+def generate_tree(directory: str, settings: Settings) -> Generator[str, None, None]:
     """
     Generates the pretty-printed tree
 

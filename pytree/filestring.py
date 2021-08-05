@@ -4,7 +4,6 @@ A set of filestring generating utilities.
 
 from pytree.end_state_history import EndStateHistory
 from pytree.utils import EntryType, Settings
-from os.path import basename
 from typing import Callable, Dict
 from colorama import Fore
 
@@ -180,9 +179,7 @@ def create_filestring_builder(
 
     prefix_function = build_fancy_prefix if fancy else build_prefix
 
-    def build_filestring(
-        name: str, type: EntryType, history: EndStateHistory
-    ) -> str:
+    def build_filestring(name: str, type: EntryType, history: EndStateHistory) -> str:
         """
         Builds a filestring for a directory entry
 

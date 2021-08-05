@@ -3,11 +3,10 @@ Directory tree traversal utilities
 """
 
 
-from os.path import basename
 from os import scandir, DirEntry
 from pytree.end_state_history import EndStateHistory
 from pytree.utils import EntryType, MAX_DEPTH
-from typing import Generator, Iterator, Tuple, Set
+from typing import Generator, Iterator, Tuple
 from pytree.utils import get_type
 
 
@@ -26,9 +25,7 @@ def filter_prefix(
     return filter(lambda x: not x.name.startswith(blacklisted_str), scandir_it)
 
 
-def construct_from_history(
-    history: EndStateHistory, is_end: bool
-) -> EndStateHistory:
+def construct_from_history(history: EndStateHistory, is_end: bool) -> EndStateHistory:
     """
     Constructs a new EndStateHistory from a previous history, and appends a new end state to it.
 
@@ -85,9 +82,7 @@ def _traverse(
         subentry_history = construct_from_history(history, index == last_index)
         yield directory_entry.name, type, subentry_history
         if type == EntryType.DIRECTORY and len(subentry_history) < MAX_DEPTH:
-            yield from _traverse(
-                directory_entry.path, subentry_history, reverse
-            )
+            yield from _traverse(directory_entry.path, subentry_history, reverse)
 
 
 def reverse_traverse_directory(
