@@ -1,31 +1,25 @@
 from os.path import basename, abspath
-from sys import platform
 from typing import Generator, Tuple, List
 from gdtree.traverse import reverse_traverse_directory, traverse_directory
 from colorama import init
-from gdtree.filestring import create_filestring_builder
-from gdtree.utils import Settings
+from gdtree.filestring import create_filestring_builder, type_colorize
+from gdtree.utils import EntryType, Settings
 from argparse import Namespace, ArgumentParser
 
 
 def start():
     """
-    The starting function for the tree generation. If you want to print the tree
-    function programmatically instead of on the command line, run this function.
+    The starting function for the tree generation.
     """
-    if platform == "win32" or platform == "cygwin":
-        # initialize colorama since we need to escape ANSI characters
-        # for use on Windows
-        init()
+    init()
     start_dir, settings = parse_settings()
-    count = 0
-    for entry in generate_tree(start_dir, settings):
-        print(entry)
-        count += 1
-    print("Entries: %d" % count)
+    gen = generate_tree(start_dir, settings)
+    print("\n".join(gen))
 
 
-def generate_tree(directory: str, settings: Settings) -> Generator[str, None, None]:
+def generate_tree(
+    directory: str, settings: Settings
+) -> Generator[str, None, None]:
     """
     Generates the pretty-printed tree
 
@@ -34,16 +28,30 @@ def generate_tree(directory: str, settings: Settings) -> Generator[str, None, No
         settings (Settings): Print settings
 
     Yields:
-        Generator[str, None, None]: Generator of pretty-printed tree strings
+        Generator[str, None, None]: Generator of pretty-printed tree strings.
     """
+    num_dir, num_files = 0, 0
+
     filestring_builder = create_filestring_builder(settings)
     if settings & Settings.REVERSE:
         traverse = reverse_traverse_directory
     else:
         traverse = traverse_directory
-    yield basename(directory)
+
+    dir_name = basename(directory)
+    if settings & Settings.COLORIZE:
+        formatted_name = type_colorize(dir_name, EntryType.DIRECTORY)
+    else:
+        formatted_name = dir_name
+    yield formatted_name
+
     for path, type, history in traverse(directory):
+        if type == EntryType.DIRECTORY:
+            num_dir += 1
+        else:
+            num_files += 1
         yield filestring_builder(path, type, history)
+    yield "%d directories, %d files" % (num_dir, num_files)
 
 
 def parse_settings(input_args: List[str] = None) -> Tuple[str, Settings]:

@@ -17,7 +17,7 @@ class TestFilestring(TestCase):
         """
         Tests that colors corresponding to a directory are properly generated
         """
-        self.assertEqual(Fore.BLUE, get_filestring_color(EntryType.DIRECTORY))
+        self.assertEqual(Fore.CYAN, get_filestring_color(EntryType.DIRECTORY))
 
     def test_get_color_symlink(self):
         """
@@ -51,7 +51,7 @@ class TestFilestring(TestCase):
         input_text = "__pycache__"
         input_type = EntryType.DIRECTORY
         output_text = type_colorize(input_text, input_type)
-        expected_output = Fore.BLUE + "__pycache__" + Fore.WHITE
+        expected_output = Fore.CYAN + "__pycache__" + Fore.WHITE
         self.assertEqual(output_text, expected_output)
 
     def test_colorize_file(self):
@@ -201,7 +201,7 @@ class TestFilestring(TestCase):
         generator = create_filestring_builder(settings)
         output = generator(path, type, history)
         expected_output = "    │   │           └── %sdirectory%s" % (
-            Fore.BLUE,
+            Fore.CYAN,
             Fore.WHITE,
         )
         self.assertEqual(output, expected_output)
@@ -241,7 +241,7 @@ class TestFilestring(TestCase):
         generator = create_filestring_builder(settings)
         output = generator(path, type, history)
         expected_output = "    ║   ║           ╚══ %sdirectory%s" % (
-            Fore.BLUE,
+            Fore.CYAN,
             Fore.WHITE,
         )
         self.assertEqual(output, expected_output)

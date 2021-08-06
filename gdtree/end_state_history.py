@@ -133,17 +133,18 @@ class _StateHistoryIterator:
     """
 
     def __init__(self, history: EndStateHistory):
-        self.index = 0
-        self.history = history
+        self.lim = 1 << len(history)
+        self.mask = 1
+        self.history = history.history
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self.index < len(self.history):
-            result = self.history[self.index]
-            self.index += 1
-            return result
+        if self.mask < self.lim:
+            temp = self.mask
+            self.mask *= 2
+            return bool(self.history & temp)
         else:
             raise StopIteration
 

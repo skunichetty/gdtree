@@ -2,6 +2,7 @@
 A set of filestring generating utilities.
 """
 
+from sys import prefix
 from gdtree.end_state_history import EndStateHistory
 from gdtree.utils import EntryType, Settings
 from typing import Callable, Dict
@@ -54,7 +55,7 @@ COLORMAP = {
     EntryType.EXECUTABLE: Fore.RED,
     EntryType.FILE: DEFAULT_COLOR,
     EntryType.SYMLINK: Fore.GREEN,
-    EntryType.DIRECTORY: Fore.BLUE,
+    EntryType.DIRECTORY: Fore.CYAN,
 }
 
 
@@ -75,7 +76,7 @@ def _get_prefix(end_state: bool, prefix_subset: Dict[bool, str]) -> str:
     try:
         output_prefix = prefix_subset[end_state]
     except KeyError as err:
-        raise ValueError("Invalid state type") from err 
+        raise ValueError("Invalid state type") from err
     return output_prefix
 
 
@@ -83,7 +84,7 @@ def _build_prefix(
     history: EndStateHistory, prefix_set: Dict[bool, Dict[bool, str]]
 ) -> str:
     last_index = len(history) - 1
-    prefixes = [""] * (last_index + 1)
+    prefixes = [None] * (last_index + 1)
     for index, state in enumerate(history):
         prefix_subset = prefix_set[index == last_index]
         prefix = _get_prefix(state, prefix_subset)
@@ -179,7 +180,9 @@ def create_filestring_builder(
 
     prefix_function = build_fancy_prefix if fancy else build_prefix
 
-    def build_filestring(name: str, type: EntryType, history: EndStateHistory) -> str:
+    def build_filestring(
+        name: str, type: EntryType, history: EndStateHistory
+    ) -> str:
         """
         Builds a filestring for a directory entry
 

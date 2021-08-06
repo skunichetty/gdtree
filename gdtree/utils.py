@@ -65,4 +65,3 @@ def get_type(entry: DirEntry) -> EntryType:
     if access(entry.path, X_OK):
         return EntryType.EXECUTABLE
     return EntryType.FILE
-
