@@ -26,7 +26,7 @@ Note that:
 -   _special_script.sh_ has execute privileges (for the current user)
 
 Then gdtree will produce the following output:
-![A picture of gdtree output]("screenshots/linux_screenshot.png")
+![A picture of gdtree output](screenshots/linux_screenshot.png)
 The directory is pretty-printed using unicode box characters, and is colorized based on the file type.
 
 ## Usage
