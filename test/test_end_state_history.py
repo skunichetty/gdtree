@@ -1,6 +1,6 @@
 from unittest import TestCase, main
-from pytree.utils import MAX_DEPTH
-from pytree.end_state_history import DepthError, EndStateHistory
+from gdtree.utils import MAX_DEPTH
+from gdtree.end_state_history import DepthError, EndStateHistory
 
 
 class TestEndStateHistory(TestCase):

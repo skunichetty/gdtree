@@ -1,4 +1,4 @@
-from pytree.utils import EntryType, get_type
+from gdtree.utils import EntryType, get_type
 from unittest import TestCase, main
 from unittest.mock import Mock, patch
 from os import DirEntry
@@ -9,7 +9,7 @@ class TestTypeExtraction(TestCase):
     Tests the ability to extract type from DirEntry objects returned by os.scandir().
     """
 
-    @patch("pytree.utils.access")
+    @patch("gdtree.utils.access")
     def test_type_extraction_is_dir(self, mocked_access):
         """
         Tests that entry type is extracted when it is a directory
@@ -24,7 +24,7 @@ class TestTypeExtraction(TestCase):
         mock.is_dir.assert_called_once()
         self.assertEqual(type, EntryType.DIRECTORY)
 
-    @patch("pytree.utils.access")
+    @patch("gdtree.utils.access")
     def test_type_extraction_is_dir_error(self, mocked_access):
         """
         Tests that testing for directory has errors handled to
@@ -39,7 +39,7 @@ class TestTypeExtraction(TestCase):
         type = get_type(mock)
         self.assertEqual(type, EntryType.FILE)
 
-    @patch("pytree.utils.access")
+    @patch("gdtree.utils.access")
     def test_type_extraction_is_file(self, mocked_access):
         """
         Tests that entry type is extracted when it is a file
@@ -53,7 +53,7 @@ class TestTypeExtraction(TestCase):
         type = get_type(mock)
         self.assertEqual(type, EntryType.FILE)
 
-    @patch("pytree.utils.access")
+    @patch("gdtree.utils.access")
     def test_type_extraction_is_symlink(self, mocked_access):
         """
         Tests that entry type is extracted when it is a symbolic link
@@ -68,7 +68,7 @@ class TestTypeExtraction(TestCase):
         mock.is_symlink.assert_called_once()
         self.assertEqual(type, EntryType.SYMLINK)
 
-    @patch("pytree.utils.access")
+    @patch("gdtree.utils.access")
     def test_type_extraction_is_symlink_to_dir(self, mocked_access):
         """
         Tests that entry type is symbolic link even if to dir. Python is_dir() will return true if it is
@@ -88,7 +88,7 @@ class TestTypeExtraction(TestCase):
         mock.is_dir.assert_not_called()
         assert type == EntryType.SYMLINK
 
-    @patch("pytree.utils.access")
+    @patch("gdtree.utils.access")
     def test_type_extraction_is_symlink_error(self, mocked_access):
         """
         Tests that testing for directory has errors handled to
@@ -103,7 +103,7 @@ class TestTypeExtraction(TestCase):
         type = get_type(mock)
         assert type == EntryType.FILE
 
-    @patch("pytree.utils.access")
+    @patch("gdtree.utils.access")
     def test_type_extraction_is_executable(self, mocked_access):
         """
         Tests that entry type is extracted when it is an executable
@@ -115,15 +115,6 @@ class TestTypeExtraction(TestCase):
         mocked_access.return_value = True
 
         assert get_type(mock) == EntryType.EXECUTABLE
-
-
-class TestSettingsExtraction(TestCase):
-    def test_settings_extraction(self):
-        """
-        Tests settings extraction from args given by ArgumentParser
-        """
-        mock_args = Mock()
-        pass
 
 
 if __name__ == "__main__":

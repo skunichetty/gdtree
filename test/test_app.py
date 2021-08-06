@@ -1,8 +1,8 @@
-from pytree.app import process_settings_from_args, setup_parser
+from gdtree.app import process_settings_from_args, setup_parser
 from unittest import TestCase, main
 from unittest.mock import Mock
 from argparse import Namespace
-from pytree.utils import Settings
+from gdtree.utils import Settings
 
 
 class TestApp(TestCase):

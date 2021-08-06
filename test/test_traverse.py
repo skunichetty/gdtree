@@ -1,9 +1,9 @@
 from os import DirEntry, scandir
-from pytree.end_state_history import EndStateHistory
-from pytree.utils import EntryType
+from gdtree.end_state_history import EndStateHistory
+from gdtree.utils import EntryType
 from unittest import TestCase, main
 from unittest.mock import patch, Mock
-from pytree.traverse import (
+from gdtree.traverse import (
     filter_prefix,
     reverse_traverse_directory,
     traverse_directory,
@@ -12,8 +12,8 @@ from pytree.traverse import (
 
 
 class TestTraversal(TestCase):
-    @patch("pytree.traverse.scandir", spec=scandir)
-    @patch("pytree.utils.access")
+    @patch("gdtree.traverse.scandir", spec=scandir)
+    @patch("gdtree.utils.access")
     def test_traverse(self, mocked_access, mocked_scandir):
         """
         Tests that traversal of a directory tree is completed
@@ -60,8 +60,8 @@ class TestTraversal(TestCase):
             self.assertEqual(item[0], expected_output[0])
             self.assertEqual(item[1], expected_output[1])
 
-    @patch("pytree.traverse.scandir", spec=scandir)
-    @patch("pytree.utils.access")
+    @patch("gdtree.traverse.scandir", spec=scandir)
+    @patch("gdtree.utils.access")
     def test_reverse_traverse(self, mocked_access, mocked_scandir):
         """
         Tests that traversal of a directory tree is completed

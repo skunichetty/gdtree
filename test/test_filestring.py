@@ -1,5 +1,5 @@
 from unittest import TestCase, main
-from pytree.filestring import (
+from gdtree.filestring import (
     create_filestring_builder,
     get_filestring_color,
     type_colorize,
@@ -7,9 +7,9 @@ from pytree.filestring import (
     build_prefix,
     build_fancy_prefix,
 )
-from pytree.utils import EntryType, Settings
+from gdtree.utils import EntryType, Settings
 from colorama import Fore
-from pytree.end_state_history import EndStateHistory
+from gdtree.end_state_history import EndStateHistory
 
 
 class TestFilestring(TestCase):
