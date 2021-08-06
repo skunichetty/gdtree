@@ -1,10 +1,10 @@
 from os.path import basename, abspath
 from sys import platform
 from typing import Generator, Tuple, List
-from pytree.traverse import reverse_traverse_directory, traverse_directory
+from gdtree.traverse import reverse_traverse_directory, traverse_directory
 from colorama import init
-from pytree.filestring import create_filestring_builder
-from pytree.utils import Settings
+from gdtree.filestring import create_filestring_builder
+from gdtree.utils import Settings
 from argparse import Namespace, ArgumentParser
 
 
@@ -95,7 +95,7 @@ def setup_parser() -> ArgumentParser:
         ArgumentParser: The argument parser object
     """
     parser = ArgumentParser(
-        prog="pytree", description="Produces a pretty-printed directory tree"
+        prog="gdtree", description="Produces a pretty-printed directory tree"
     )
     parser.add_argument(
         "directory",

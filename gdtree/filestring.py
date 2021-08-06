@@ -2,8 +2,8 @@
 A set of filestring generating utilities.
 """
 
-from pytree.end_state_history import EndStateHistory
-from pytree.utils import EntryType, Settings
+from gdtree.end_state_history import EndStateHistory
+from gdtree.utils import EntryType, Settings
 from typing import Callable, Dict
 from colorama import Fore
 
@@ -74,8 +74,8 @@ def _get_prefix(end_state: bool, prefix_subset: Dict[bool, str]) -> str:
     """
     try:
         output_prefix = prefix_subset[end_state]
-    except KeyError:
-        raise ValueError("Invalid state type")
+    except KeyError as err:
+        raise ValueError("Invalid state type") from err 
     return output_prefix
 
 

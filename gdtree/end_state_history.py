@@ -1,5 +1,5 @@
 from typing import List
-from pytree.utils import MAX_DEPTH
+from gdtree.utils import MAX_DEPTH
 
 
 class EndStateHistory:

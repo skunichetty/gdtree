@@ -1,4 +1,4 @@
-from pytree.app import start
+from gdtree.app import start
 
 if __name__ == "__main__":
     # Delegate execution to app module

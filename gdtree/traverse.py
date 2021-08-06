@@ -4,10 +4,9 @@ Directory tree traversal utilities
 
 
 from os import scandir, DirEntry
-from pytree.end_state_history import EndStateHistory
-from pytree.utils import EntryType, MAX_DEPTH
+from gdtree.end_state_history import EndStateHistory
+from gdtree.utils import EntryType, MAX_DEPTH, get_type
 from typing import Generator, Iterator, Tuple
-from pytree.utils import get_type
 
 
 def filter_prefix(

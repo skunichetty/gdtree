@@ -1,5 +1,5 @@
 """
-A set of smaller (but important) utility constants, functions, and classes used by pytree
+A set of smaller (but important) utility constants, functions, and classes used by gdtree
 """
 
 from os import access, X_OK, DirEntry
@@ -12,7 +12,7 @@ MAX_DEPTH = 32
 
 class EntryType(Enum):
     """
-    Enum type consisting of all possible directory entry types encountered by pytree.
+    Enum type consisting of all possible directory entry types
     """
 
     DIRECTORY = 1
@@ -65,3 +65,4 @@ def get_type(entry: DirEntry) -> EntryType:
     if access(entry.path, X_OK):
         return EntryType.EXECUTABLE
     return EntryType.FILE
+
