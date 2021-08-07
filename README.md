@@ -27,7 +27,7 @@ where
 
 gdtree will produce the following output when called on this directory
 
-![A picture of gdtree output](screenshots/linux_screenshot.png)
+![A picture of gdtree output](https://raw.githubusercontent.com/skunichetty/gdtree/main/screenshots/linux_screenshot.png)
 
 The directory is pretty-printed using unicode box characters, and is colorized based on the file type.
 
